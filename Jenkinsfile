@@ -12,7 +12,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'echo Build Successful'
+                sh 'docker build -t pranavcodes1/jenkins-cicd-automation:latest .'
             }
         }
 
