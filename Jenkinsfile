@@ -1,12 +1,12 @@
 pipeline {
 
-    agent {
+   agent {
     kubernetes {
         yaml '''
 apiVersion: v1
 kind: Pod
-spec:
 
+spec:
   containers:
 
   - name: docker
@@ -17,20 +17,19 @@ spec:
     - dockerd
     args:
     - --host=unix:///var/run/docker.sock
+    tty: true
 
   - name: kubectl
-  image: bitnami/kubectl:latest
-  command:
-  - sleep
-  args:
-  - "999999"
-  tty: true
+    image: bitnami/kubectl:latest
+    command:
+    - sleep
+    args:
+    - "999999"
+    tty: true
 
-  - name: jnlp
 '''
     }
-}
-    stages {
+}    stages {
 
         stage('Checkout') {
             steps {
