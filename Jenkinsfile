@@ -39,5 +39,35 @@ spec:
             }
         }
 
+	stage('Docker Login') {
+    steps {
+        container('docker') {
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )
+            ]) {
+                sh '''
+                echo "$DOCKER_PASS" | docker login \
+                -u "$DOCKER_USER" \
+                --password-stdin
+                '''
+            }
+        }
+    }
+}
+
+stage('Push Image') {
+    steps {
+        container('docker') {
+            sh '''
+            docker push pranavcodes1/jenkins-cicd-automation:latest
+            '''
+        }
+    }
+}
+
     }
 }
