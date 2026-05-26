@@ -7,11 +7,17 @@ apiVersion: v1
 kind: Pod
 spec:
   containers:
+
   - name: docker
-    image: docker:24-cli
+    image: docker:24-dind
+    securityContext:
+      privileged: true
     command:
-    - cat
-    tty: true
+    - dockerd
+    args:
+    - --host=unix:///var/run/docker.sock
+
+  - name: jnlp
 '''
         }
     }
@@ -27,6 +33,7 @@ spec:
         stage('Build Image') {
             steps {
                 container('docker') {
+                    sh 'docker version'
                     sh 'docker build -t pranavcodes1/jenkins-cicd-automation:latest .'
                 }
             }
