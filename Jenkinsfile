@@ -1,8 +1,8 @@
 pipeline {
 
-   agent {
-    kubernetes {
-        yaml '''
+    agent {
+        kubernetes {
+            yaml '''
 apiVersion: v1
 kind: Pod
 
@@ -26,10 +26,11 @@ spec:
     args:
     - "999999"
     tty: true
-
 '''
+        }
     }
-}    stages {
+
+    stages {
 
         stage('Checkout') {
             steps {
@@ -46,49 +47,44 @@ spec:
             }
         }
 
-	stage('Docker Login') {
-    steps {
-        container('docker') {
-            withCredentials([
-                usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )
-            ]) {
-                sh '''
-                echo "$DOCKER_PASS" | docker login \
-                -u "$DOCKER_USER" \
-                --password-stdin
-                '''
+        stage('Docker Login') {
+            steps {
+                container('docker') {
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'dockerhub-creds',
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )
+                    ]) {
+                        sh '''
+                        echo "$DOCKER_PASS" | docker login \
+                        -u "$DOCKER_USER" \
+                        --password-stdin
+                        '''
+                    }
+                }
             }
         }
-    }
-}
 
-stage('Push Image') {
-    steps {
-        container('docker') {
-            sh '''
-            docker push pranavcodes1/jenkins-cicd-automation:latest
-            '''
+        stage('Push Image') {
+            steps {
+                container('docker') {
+                    sh 'docker push pranavcodes1/jenkins-cicd-automation:latest'
+                }
+            }
         }
-    }
-}
 
-stage('Deploy to Kubernetes') {
-    steps {
-        container('kubectl') {
-
-            sh 'kubectl version --client'
-	    sh 'kubectl get ns'
-
-            sh '''
-            kubectl apply -f k8s/deployment.yaml
-            kubectl apply -f k8s/service.yaml
-            '''
+        stage('Deploy to Kubernetes') {
+            steps {
+                container('kubectl') {
+                    sh 'kubectl version --client'
+                    sh 'kubectl get ns'
+                    sh 'kubectl apply -f k8s/deployment.yaml'
+                    sh 'kubectl apply -f k8s/service.yaml'
+                }
+            }
         }
-    }
-}
+
     }
 }
