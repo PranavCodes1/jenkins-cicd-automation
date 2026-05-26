@@ -24,10 +24,10 @@ spec:
             }
         }
 
-        stage('Verify Docker') {
+        stage('Build Image') {
             steps {
                 container('docker') {
-                    sh 'docker --version'
+                    sh 'docker build -t pranavcodes1/jenkins-cicd-automation:latest .'
                 }
             }
         }
