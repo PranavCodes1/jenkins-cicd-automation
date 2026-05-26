@@ -11,23 +11,24 @@ spec:
 
   - name: docker
     image: docker:24-dind
+
     securityContext:
       privileged: true
+
     command:
     - dockerd
+
     args:
     - --host=unix:///var/run/docker.sock
-    tty: true
 
-  - name: kubectl
-    image: bitnami/kubectl:latest
-    command:
-    - sleep
-    args:
-    - "999999"
     tty: true
 '''
         }
+    }
+
+    environment {
+        IMAGE = 'pranavcodes1/jenkins-cicd-automation:latest'
+        NAMESPACE = 'pranav-cicd'
     }
 
     stages {
@@ -41,8 +42,10 @@ spec:
         stage('Build Image') {
             steps {
                 container('docker') {
-                    sh 'docker version'
-                    sh 'docker build -t pranavcodes1/jenkins-cicd-automation:latest .'
+                    sh '''
+                    docker version
+                    docker build -t $IMAGE .
+                    '''
                 }
             }
         }
@@ -50,6 +53,7 @@ spec:
         stage('Docker Login') {
             steps {
                 container('docker') {
+
                     withCredentials([
                         usernamePassword(
                             credentialsId: 'dockerhub-creds',
@@ -57,6 +61,7 @@ spec:
                             passwordVariable: 'DOCKER_PASS'
                         )
                     ]) {
+
                         sh '''
                         echo "$DOCKER_PASS" | docker login \
                         -u "$DOCKER_USER" \
@@ -70,21 +75,59 @@ spec:
         stage('Push Image') {
             steps {
                 container('docker') {
-                    sh 'docker push pranavcodes1/jenkins-cicd-automation:latest'
+                    sh '''
+                    docker push $IMAGE
+                    '''
+                }
+            }
+        }
+
+        stage('Verify Kubernetes Access') {
+            steps {
+                container('docker') {
+
+                    sh '''
+                    which kubectl
+                    '''
+
+                    sh '''
+                    kubectl config current-context
+                    '''
+
+                    sh '''
+                    kubectl get ns
+                    '''
+                }
+            }
+        }
+
+        stage('Create Namespace') {
+            steps {
+                container('docker') {
+
+                    sh '''
+                    kubectl create namespace $NAMESPACE \
+                    --dry-run=client -o yaml | kubectl apply -f -
+                    '''
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                container('kubectl') {
-                    sh 'kubectl version --client'
-                    sh 'kubectl get ns'
-                    sh 'kubectl apply -f k8s/deployment.yaml'
-                    sh 'kubectl apply -f k8s/service.yaml'
+                container('docker') {
+
+                    sh '''
+                    kubectl apply -f k8s/deployment.yaml
+                    '''
+
+                    sh '''
+                    kubectl apply -f k8s/service.yaml
+                    '''
                 }
             }
         }
 
     }
+
 }
