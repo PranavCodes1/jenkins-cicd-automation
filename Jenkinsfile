@@ -106,7 +106,7 @@ kubectl get ns
 kubectl create namespace $NAMESPACE \
 --dry-run=client -o yaml | kubectl apply -f -
 
-sed -i "s|__IMAGE_TAG__|'"$BUILD_NUMBER"'|g" k8s/deployment.yaml
+sed -i "s|__IMAGE_TAG__|$BUILD_NUMBER|g" k8s/deployment.yaml
 
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
