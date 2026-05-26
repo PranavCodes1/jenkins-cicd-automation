@@ -30,7 +30,7 @@ spec:
     }
 
     environment {
-        IMAGE = 'pranavcodes1/jenkins-cicd-automation:latest'
+        IMAGE = "pranavcodes1/jenkins-cicd-automation:${BUILD_NUMBER}"
         NAMESPACE = 'pranav-cicd'
     }
 
@@ -98,20 +98,19 @@ spec:
                         )
                     ]) {
 
-                        sh '''	
+                       sh '''
+kubectl version --client
 
-                        kubectl version --client
+kubectl get ns
 
-                        kubectl get ns
+kubectl create namespace $NAMESPACE \
+--dry-run=client -o yaml | kubectl apply -f -
 
-                        kubectl create namespace $NAMESPACE \
-                        --dry-run=client -o yaml | kubectl apply -f -
+sed -i "s|__IMAGE_TAG__|'"$BUILD_NUMBER"'|g" k8s/deployment.yaml
 
-                        kubectl apply -f k8s/deployment.yaml
-
-                        kubectl apply -f k8s/service.yaml
-                        '''
-                    }
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+'''                    }
 
                 }
 

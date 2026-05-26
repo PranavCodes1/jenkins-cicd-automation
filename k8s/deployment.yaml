@@ -21,7 +21,7 @@ spec:
       containers:
       - name: flask-app
 
-        image: pranavcodes1/jenkins-cicd-automation:latest
+        image: pranavcodes1/jenkins-cicd-automation:__IMAGE_TAG__
         imagePullPolicy: Always
 
         ports:
