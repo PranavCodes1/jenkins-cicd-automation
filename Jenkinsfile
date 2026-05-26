@@ -1,6 +1,20 @@
 pipeline {
 
-    agent any
+    agent {
+        kubernetes {
+            yaml '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: docker
+    image: docker:24-cli
+    command:
+    - cat
+    tty: true
+'''
+        }
+    }
 
     stages {
 
@@ -10,12 +24,13 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Verify Docker') {
             steps {
-                sh 'docker build -t pranavcodes1/jenkins-cicd-automation:latest .'
+                container('docker') {
+                    sh 'docker --version'
+                }
             }
         }
 
     }
-
 }
