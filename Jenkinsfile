@@ -19,10 +19,12 @@ spec:
     - --host=unix:///var/run/docker.sock
 
   - name: kubectl
-    image: bitnami/kubectl:latest
-    command:
-    - cat
-    tty: true
+  image: bitnami/kubectl:latest
+  command:
+  - sleep
+  args:
+  - "999999"
+  tty: true
 
   - name: jnlp
 '''
@@ -80,6 +82,7 @@ stage('Deploy to Kubernetes') {
         container('kubectl') {
 
             sh 'kubectl version --client'
+	    sh 'kubectl get ns'
 
             sh '''
             kubectl apply -f k8s/deployment.yaml
