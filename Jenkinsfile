@@ -1,8 +1,8 @@
 pipeline {
 
     agent {
-    kubernetes {
-        yaml '''
+        kubernetes {
+            yaml '''
 apiVersion: v1
 kind: Pod
 
@@ -16,20 +16,15 @@ spec:
       privileged: true
 
     command:
-    - sh
+    - dockerd
 
     args:
-    - -c
-    - |
-      apk add --no-cache curl
-      curl -LO https://dl.k8s.io/release/v1.34.1/bin/linux/amd64/kubectl
-      install -m 0755 kubectl /usr/local/bin/kubectl
-      dockerd --host=unix:///var/run/docker.sock
+    - --host=unix:///var/run/docker.sock
 
     tty: true
 '''
+        }
     }
-}
 
     environment {
         IMAGE = 'pranavcodes1/jenkins-cicd-automation:latest'
@@ -58,7 +53,6 @@ spec:
         stage('Docker Login') {
             steps {
                 container('docker') {
-
                     withCredentials([
                         usernamePassword(
                             credentialsId: 'dockerhub-creds',
@@ -66,7 +60,6 @@ spec:
                             passwordVariable: 'DOCKER_PASS'
                         )
                     ]) {
-
                         sh '''
                         echo "$DOCKER_PASS" | docker login \
                         -u "$DOCKER_USER" \
@@ -90,17 +83,8 @@ spec:
         stage('Verify Kubernetes Access') {
             steps {
                 container('docker') {
-
                     sh '''
                     which kubectl
-                    '''
-
-                    sh '''
-                    kubectl config current-context
-                    '''
-
-                    sh '''
-                    kubectl get ns
                     '''
                 }
             }
@@ -109,7 +93,6 @@ spec:
         stage('Create Namespace') {
             steps {
                 container('docker') {
-
                     sh '''
                     kubectl create namespace $NAMESPACE \
                     --dry-run=client -o yaml | kubectl apply -f -
@@ -121,12 +104,8 @@ spec:
         stage('Deploy to Kubernetes') {
             steps {
                 container('docker') {
-
                     sh '''
                     kubectl apply -f k8s/deployment.yaml
-                    '''
-
-                    sh '''
                     kubectl apply -f k8s/service.yaml
                     '''
                 }
@@ -134,5 +113,4 @@ spec:
         }
 
     }
-
 }
