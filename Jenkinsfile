@@ -1,11 +1,12 @@
 pipeline {
 
     agent {
-        kubernetes {
-            yaml '''
+    kubernetes {
+        yaml '''
 apiVersion: v1
 kind: Pod
 spec:
+
   containers:
 
   - name: docker
@@ -17,11 +18,16 @@ spec:
     args:
     - --host=unix:///var/run/docker.sock
 
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command:
+    - cat
+    tty: true
+
   - name: jnlp
 '''
-        }
     }
-
+}
     stages {
 
         stage('Checkout') {
@@ -71,12 +77,16 @@ stage('Push Image') {
 
 stage('Deploy to Kubernetes') {
     steps {
-        sh '''
-        kubectl apply -f k8s/deployment.yaml
-        kubectl apply -f k8s/service.yaml
-        '''
+        container('kubectl') {
+
+            sh 'kubectl version --client'
+
+            sh '''
+            kubectl apply -f k8s/deployment.yaml
+            kubectl apply -f k8s/service.yaml
+            '''
+        }
     }
 }
-
     }
 }
