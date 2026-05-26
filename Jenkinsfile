@@ -1,8 +1,8 @@
 pipeline {
 
     agent {
-        kubernetes {
-            yaml '''
+    kubernetes {
+        yaml '''
 apiVersion: v1
 kind: Pod
 
@@ -16,15 +16,20 @@ spec:
       privileged: true
 
     command:
-    - dockerd
+    - sh
 
     args:
-    - --host=unix:///var/run/docker.sock
+    - -c
+    - |
+      apk add --no-cache curl
+      curl -LO https://dl.k8s.io/release/v1.34.1/bin/linux/amd64/kubectl
+      install -m 0755 kubectl /usr/local/bin/kubectl
+      dockerd --host=unix:///var/run/docker.sock
 
     tty: true
 '''
-        }
     }
+}
 
     environment {
         IMAGE = 'pranavcodes1/jenkins-cicd-automation:latest'
