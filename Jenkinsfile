@@ -30,8 +30,8 @@ spec:
     }
 
     environment {
-        IMAGE = "pranavcodes1/jenkins-cicd-automation:${BUILD_NUMBER}"
-        NAMESPACE = 'pranav-cicd'
+        IMAGE = "registry.vforeseetech.com/my-repository/jenkins-cicd-automation:${BUILD_NUMBER}"
+        NAMESPACE = "pranav-cicd"
     }
 
     stages {
@@ -59,19 +59,18 @@ spec:
 
                     withCredentials([
                         usernamePassword(
-                            credentialsId: 'dockerhub-creds',
-                            usernameVariable: 'DOCKER_USER',
-                            passwordVariable: 'DOCKER_PASS'
+                            credentialsId: 'nexus-creds',
+                            usernameVariable: 'NEXUS_USER',
+                            passwordVariable: 'NEXUS_PASS'
                         )
                     ]) {
 
                         sh '''
-                        echo "$DOCKER_PASS" | docker login \
-                        -u "$DOCKER_USER" \
+                        echo "$NEXUS_PASS" | docker login registry.vforeseetech.com \
+                        -u "$NEXUS_USER" \
                         --password-stdin
                         '''
                     }
-
                 }
             }
         }
@@ -95,28 +94,37 @@ spec:
                         file(
                             credentialsId: 'v4c-kubeconfig',
                             variable: 'KUBECONFIG'
+                        ),
+                        usernamePassword(
+                            credentialsId: 'nexus-creds',
+                            usernameVariable: 'NEXUS_USER',
+                            passwordVariable: 'NEXUS_PASS'
                         )
                     ]) {
 
-                       sh '''
-kubectl version --client
+                        sh '''
+                        kubectl version --client
 
-kubectl get ns
+                        kubectl create namespace $NAMESPACE \
+                        --dry-run=client -o yaml | kubectl apply -f -
 
-kubectl create namespace $NAMESPACE \
---dry-run=client -o yaml | kubectl apply -f -
+                        kubectl create secret docker-registry nexus-secret \
+                          --docker-server=registry.vforeseetech.com \
+                          --docker-username="$NEXUS_USER" \
+                          --docker-password="$NEXUS_PASS" \
+                          --namespace=$NAMESPACE \
+                          --dry-run=client -o yaml | kubectl apply -f -
 
-sed -i "s|__IMAGE_TAG__|$BUILD_NUMBER|g" k8s/deployment.yaml
+                        sed -i "s|__IMAGE_TAG__|$BUILD_NUMBER|g" k8s/deployment.yaml
 
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-'''                    }
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
 
+                        kubectl rollout status deployment/flask-app -n $NAMESPACE --timeout=120s || true
+                        '''
+                    }
                 }
-
             }
         }
-
     }
-
 }
