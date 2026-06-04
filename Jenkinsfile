@@ -41,7 +41,15 @@ spec:
                 checkout scm
             }
         }
-	
+	stage('Test SonarQube Service') {
+    steps {
+        container('kubectl') {
+            sh '''
+            wget -qO- http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000/api/server/version
+            '''
+        }
+    }
+}
 	stage('SonarQube Analysis') {
     steps {
         script {
