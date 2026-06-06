@@ -25,6 +25,14 @@ spec:
     command:
     - cat
     tty: true
+
+  - name: sonar-scanner	
+    image: sonarsource/sonar-scanner-cli:latest
+    command:
+    - cat
+    tty: true
+
+
 '''
         }
     }
@@ -52,18 +60,26 @@ spec:
 }
 	stage('SonarQube Analysis') {
     steps {
-        script {
-            def scannerHome = tool 'SonarScanner'
+        container('sonar-scanner') {
 
-            withSonarQubeEnv('SonarQube') {
-                sh """
-                ${scannerHome}/bin/sonar-scanner
-                """
+            withCredentials([
+                string(
+                    credentialsId: 'sonarqube-token',
+                    variable: 'SONAR_TOKEN'
+                )
+            ]) {
+
+                sh '''
+                sonar-scanner \
+                  -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
+                  -Dsonar.token=$SONAR_TOKEN
+                '''
             }
         }
     }
 }
-        stage('Build Image') {
+
+	stage('Build Image') {
             steps {
                 container('docker') {
                     sh '''
