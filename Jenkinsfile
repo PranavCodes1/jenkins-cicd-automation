@@ -70,7 +70,6 @@ spec:
             ]) {
 
                 withSonarQubeEnv('SonarQube') {
-
                     sh '''
                     sonar-scanner \
                       -Dsonar.token=$SONAR_TOKEN
@@ -84,7 +83,6 @@ spec:
 stage('Quality Gate') {
     steps {
         timeout(time: 5, unit: 'MINUTES') {
-
             script {
                 def qg = waitForQualityGate()
 
@@ -96,7 +94,8 @@ stage('Quality Gate') {
             }
         }
     }
-}	stage('Build Image') {
+}
+	stage('Build Image') {
             steps {
                 container('docker') {
                     sh '''
